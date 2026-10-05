@@ -1,0 +1,62 @@
+/* Field analysis alone occupies the desktop viewport; other depths keep their layout. */
+.dw-future-space{background:#182b36;padding:24px;display:flex;align-items:center;border:1px dashed #47616e;color:#a7bbc9}
+.dw-future-space h2{color:#d8e6ed;margin:10px 0;font-size:18px;font-weight:500}
+.dw-future-space p{margin-bottom:8px}.dw-future-space span{font-size:11px}
+.dw-part-switch{position:absolute;bottom:30px;left:14px;display:flex;gap:4px}
+.dw-part-switch button{padding:4px 9px;font-size:11px;background:#243d49e8}
+.dw-part-switch button[aria-pressed=true]{border-color:#83c9bf;background:#3a6269}
+.el-side-detail .el-detail{margin:0;padding:0;border:0}
+.el-side-detail h3{font-size:14px;margin:4px 0}
+.el-side-detail .el-sensors{grid-template-columns:repeat(2,minmax(0,1fr))}
+.el-side-detail .el-sensors>div{padding:9px}
+.el-side-detail .el-sensors strong{font-size:18px}
+@media(min-width:1200px) and (min-height:680px){
+  .dw-app.dw-field-mode{height:100dvh;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+  .dw-field-mode>.dw-header{min-height:54px;padding:7px 20px;gap:25px;flex-shrink:0}
+  .dw-field-mode .dw-header>a{font-size:23px}.dw-field-mode .dw-heading h1{font-size:17px}
+  .dw-field-mode>.dw-depth{padding:0 18px;flex-shrink:0}
+  .dw-field-mode .dw-depth>button{padding:7px 20px}
+  .dw-field-mode>.dw-local-status{padding:6px 20px;gap:8px;flex-shrink:0}
+  .dw-field-mode .dw-local-status button{font-size:11px;padding:5px 9px}
+  .dw-field-mode .dw-local-status>div{display:flex;align-items:center;gap:12px;min-width:0}
+  .dw-field-mode .dw-local-status span{font-size:10px;max-width:440px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dw-field-mode>.dw-scenario,.dw-field-mode>.dw-error{padding:4px 20px;flex-shrink:0;font-size:11px}
+  .dw-field-mode>.dw-connection{position:absolute;top:100px;left:20px;right:20px;z-index:10;box-shadow:0 12px 35px #0008}
+  .dw-field-mode>.dw-main.exploded{width:100%;max-width:none;margin:0;flex:1;min-height:0;display:grid;grid-template-columns:minmax(280px,.82fr) minmax(320px,1.18fr) clamp(330px,26vw,420px);grid-template-rows:minmax(150px,26%) 68px minmax(0,1fr);gap:0;align-items:stretch;overflow:hidden}
+  .dw-field-mode .dw-model-column{display:contents}
+  .dw-field-mode .dw-main.exploded .dw-viewer{grid-column:1;grid-row:1;height:auto;min-height:0;border-right:1px solid var(--line)}
+  .dw-field-mode .dw-camera-tools{top:8px;right:8px}.dw-field-mode .dw-camera-tools button{padding:3px 6px;font-size:10px}
+  .dw-field-mode .dw-viewer-label{left:14px;top:10px}.dw-field-mode .dw-viewer-label>span{font-size:17px}.dw-field-mode .dw-viewer-label small{font-size:10px}
+  .dw-field-mode .dw-viewer>footer{left:14px;right:10px;bottom:7px;font-size:9px}
+  .dw-field-mode .dw-future-space{grid-column:2;grid-row:1;margin:10px;min-width:0;overflow:hidden;padding:14px 20px}
+  .dw-field-mode .dw-future-space h2{font-size:17px;max-width:40ch}
+  .dw-field-mode .dw-model-column>.dw-fleet-strip{display:none}
+  .dw-field-mode .dw-timeline{grid-column:1/3;grid-row:2;padding:6px 18px;min-height:0}
+  .dw-field-mode .dw-timeline-top{gap:10px;height:28px}.dw-field-mode .dw-timeline-top>div{flex-direction:row;gap:12px;align-items:center}
+  .dw-field-mode .dw-timeline-top>button:first-child{padding:0 10px;font-size:16px}
+  .dw-field-mode .dw-timeline-track{height:10px;margin-top:3px}.dw-field-mode .dw-timeline-track button{height:8px;width:5px}
+  .dw-field-mode .dw-timeline input{margin:3px 0;height:12px}
+  .dw-field-mode .dw-timeline>small{display:none}
+  .dw-field-mode .dw-main.exploded>.el-panel{grid-column:1/3;grid-row:3;min-height:0;padding:10px 16px;display:flex;flex-direction:column;overflow:hidden}
+  .dw-field-mode .el-heading{margin-bottom:6px;flex-shrink:0}.dw-field-mode .el-heading h2{font-size:15px}.dw-field-mode .el-heading p{display:none}
+  .dw-field-mode .el-workbench{flex:1;min-height:0;grid-template-columns:minmax(0,1fr) 220px;gap:14px}
+  .dw-field-mode .el-graph-column{min-height:0;display:flex;flex-direction:column}
+  .dw-field-mode .el-readout{padding:0;gap:26px;flex-shrink:0}.dw-field-mode .el-readout strong{font-size:23px}.dw-field-mode .el-readout b{font-size:13px}
+  .dw-field-mode .el-range{margin:4px 0;flex-shrink:0}.dw-field-mode .el-range button{font-size:10px;padding:2px 7px}
+  .dw-field-mode .el-graph-scroll{flex:1;min-height:0;overflow:hidden}
+  .dw-field-mode .el-graph{height:100%;width:100%;min-width:0}
+  .dw-field-mode .el-legend{margin:5px 0 0;font-size:10px;gap:9px;flex-shrink:0}
+  .dw-field-mode .el-basis{display:none}
+  .dw-field-mode .el-events{min-height:0;display:flex;flex-direction:column;padding-left:12px}
+  .dw-field-mode .el-list-heading{flex-wrap:wrap;gap:3px}.dw-field-mode .el-list-heading h3{font-size:12px}
+  .dw-field-mode .el-filters{margin:7px 0;flex-shrink:0}
+  .dw-field-mode .el-event-cards{flex:1;min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain}
+  .dw-field-mode .el-event-cards .el-event-card{padding:8px;margin-bottom:6px}.dw-field-mode .el-event-card b{margin:4px 0;font-size:11px}
+  .dw-field-mode .dw-main>.dw-panel{grid-column:3;grid-row:1/4;min-height:0;height:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+  .dw-field-mode .dw-panel>.dw-section,.dw-field-mode .dw-machine-summary{padding:16px 18px}
+  .dw-field-mode .dw-machine-summary h2{font-size:19px}.dw-field-mode .dw-machine-summary p{margin-top:3px}
+  .dw-field-mode>.dw-page-footer{padding:3px 20px;flex-shrink:0;font-size:9px}
+}
+
+.el-graph-scroll{height:300px}.el-graph{height:100%}
+@media(min-width:1200px) and (min-height:680px){.dw-field-mode .el-graph-scroll{height:auto}.dw-field-mode .el-graph text{font-size:11px}.dw-field-mode .dw-future-space p{font-size:12px}.dw-field-mode .dw-future-space h2{margin:6px 0}.dw-field-mode .dw-future-space span{font-size:10px}}

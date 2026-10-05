@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "machineId": "pulverizer_a",
+  "asOf": "2026-09-26T09:00:00+09:00",
+  "source": "scenario",
+  "displayMode": "scenario",
+  "running": false,
+  "bowlRpm": 0,
+  "classifierRpm": 0,
+  "wearLimitMm": 38,
+  "rollers": [
+    {
+      "componentId": "tire_01",
+      "wearMm": [
+        0.0,
+        3.8,
+        7.6,
+        11.4,
+        15.2,
+        19.0,
+        22.8,
+        26.6,
+        30.4,
+        34.2
+      ],
+      "valid": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "componentId": "tire_02",
+      "wearMm": [
+        3.8,
+        7.6,
+        11.4,
+        15.2,
+        19.0,
+        22.8,
+        26.6,
+        30.4,
+        34.2,
+        38.0
+      ],
+      "valid": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "componentId": "tire_03",
+      "wearMm": [
+        7.6,
+        11.4,
+        15.2,
+        19.0,
+        22.8,
+        26.6,
+        30.4,
+        34.2,
+        38.0,
+        41.8
+      ],
+      "valid": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  ]
+}

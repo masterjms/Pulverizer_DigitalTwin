@@ -1,0 +1,16 @@
+# Unity-compatible material placeholders
+newmtl RollTire_Base
+Ka 0.08 0.08 0.08
+Kd 0.18 0.18 0.18
+Ks 0.15 0.15 0.15
+Ns 30
+d 1.0
+illum 2
+
+newmtl RollTire_Outer
+Ka 0.08 0.08 0.08
+Kd 0.22 0.22 0.22
+Ks 0.20 0.20 0.20
+Ns 40
+d 1.0
+illum 2

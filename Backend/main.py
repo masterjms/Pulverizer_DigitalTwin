@@ -16,6 +16,7 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
 )
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
 from database import (
@@ -37,6 +38,8 @@ from alarm_logic import (
     get_alarm_message,
 )
 
+import wear_engine
+
 SIMULATION_MACHINE_ID = "PV-001"
 UPDATE_INTERVAL_SECONDS = 0.5
 ALLOWED_BUCKETS = {
@@ -46,6 +49,15 @@ ALLOWED_BUCKETS = {
     "5m": "5 minutes",
     "15m": "15 minutes",
 }
+
+# 롤타이어는 3개가 물리적으로 존재하지만, 실제 현장에서는 그 중 1개에만 센서를
+# 달아 측정하고 마모/교체 시점도 3개를 한꺼번에 판단한다 - 그래서 대표 타이어 1개만 다룬다.
+MONITORED_TIRE_ID = "roll_tire"
+
+# 실제 누적 운전시간 데이터가 없으므로, 데모/파이프라인 검증용으로 시간을 가속한다.
+# (1 real second = 1 simulated operating hour). 실데이터 연결 시 이 시뮬레이션은 제거한다.
+BASELINE_CUMULATIVE_HOURS = 4000.0
+SIMULATED_HOURS_PER_SECOND = 1.0
 
 START_TIME = time.monotonic()
 
@@ -140,6 +152,26 @@ def create_pulverizer_data(machine_id: str) -> dict[str, Any]:
     alarm_level = "NORMAL"
     alarm_message = ""
 
+    # ---- 입력데이터셋 설명_미분기_20260604.xlsx 의 14개 실시간 태그 (시뮬레이션) ----
+    # 실제 DCS 터널 연결 전까지 사용하는 목데이터다. 필드명은 데이터셋 문서의
+    # "데이터 컬럼명"을 camelCase로 옮긴 것이며, 실데이터 연동 시에도 유지한다.
+    feed_rate_tph = 42.0 + math.sin(elapsed * 0.08) * 8.0
+    mw = 480.0 + math.sin(elapsed * 0.05) * 40.0
+    inlet_temp_c = 260.0 + math.sin(elapsed * 0.15) * 15.0
+    outlet_temp_c = 78.0 + math.sin(elapsed * 0.15) * 4.0
+    bowl_dp_mmh2o = 250.0 + math.sin(elapsed * 0.2) * 30.0 + (feed_rate_tph - 42.0) * 2.0
+    classifier_speed_demand_pct = 55.0 + math.sin(elapsed * 0.12) * 10.0
+    classifier_vane_speed_actual_rpm = 95.0 + math.sin(elapsed * 0.12) * 15.0
+    classifier_speed_bias_pct = math.sin(elapsed * 0.07) * 5.0
+    pyrite_valve_open = int(elapsed) % 45 < 3
+    pyrite_hopper_temp_c = 60.0 + math.sin(elapsed * 0.1) * 5.0
+    journal_pressure_setpoint_psi = 900.0
+    journal_pressure_actual_psi = 900.0 + math.sin(elapsed * 0.3) * 40.0
+
+    cumulative_operating_hours = (
+        BASELINE_CUMULATIVE_HOURS + elapsed * SIMULATED_HOURS_PER_SECOND
+    )
+
     return {
         # UTC 기준 측정 시각이다.
         # Unity의 기존 PulverizerData에 이 필드가 없어도 무시되므로 문제없다.
@@ -156,6 +188,21 @@ def create_pulverizer_data(machine_id: str) -> dict[str, Any]:
 
         "alarmLevel": alarm_level,
         "alarmMessage": alarm_message,
+
+        # 아래부터는 실제 데이터셋 문서(14개 태그) 기준 필드 - 신규 추가.
+        "mw": round(mw, 1),
+        "feedRateTph": round(feed_rate_tph, 1),
+        "inletTempC": round(inlet_temp_c, 1),
+        "outletTempC": round(outlet_temp_c, 1),
+        "bowlDpMmH2o": round(bowl_dp_mmh2o, 1),
+        "classifierSpeedDemandPct": round(classifier_speed_demand_pct, 1),
+        "classifierVaneSpeedActualRpm": round(classifier_vane_speed_actual_rpm, 1),
+        "classifierSpeedBiasPct": round(classifier_speed_bias_pct, 1),
+        "pyriteValveOpen": pyrite_valve_open,
+        "pyriteHopperTempC": round(pyrite_hopper_temp_c, 1),
+        "journalPressureSetpointPsi": round(journal_pressure_setpoint_psi, 1),
+        "journalPressureActualPsi": round(journal_pressure_actual_psi, 1),
+        "cumulativeOperatingHours": round(cumulative_operating_hours, 1),
     }
 
 
@@ -267,6 +314,21 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# 프론트엔드(pulverizer-frontend, Vite 개발서버) 및 Unity WebGL 임베드 호스트에서의
+# 브라우저 요청을 허용한다. 실서비스 배포 시에는 실제 프론트 도메인으로 좁혀야 한다.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3142",
+        "http://127.0.0.1:3142",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.get("/api/pulverizers/{machine_id}/aggregates")
 async def read_sensor_aggregates(
     machine_id: str,
@@ -336,6 +398,96 @@ async def get_pulverizer_status(
         )
 
     return data
+
+@app.get("/api/pulverizers/{machine_id}/wear")
+async def get_pulverizer_wear(
+    machine_id: str,
+    contact_width_scenario: str = Query(
+        default=wear_engine.DEFAULT_CONTACT_WIDTH_SCENARIO,
+        description=(
+            "유효 접촉폭 시나리오: "
+            + ", ".join(wear_engine.CONTACT_WIDTH_SCENARIOS_M)
+        ),
+    ),
+    wear_coefficient_k: float | None = Query(
+        default=None,
+        description="마모계수 K 오버라이드 (기본값: 가정값 사용, what-if 분석용)",
+    ),
+    load_newtons: float | None = Query(
+        default=None,
+        description="롤 1개당 하중 F(N) 수동 오버라이드 (what-if 분석용)",
+    ),
+) -> dict[str, Any]:
+    """물리식(Archard 법칙) 기반 롤타이어 마모량/잔존수명을 계산한다.
+
+    실제 현장에서는 롤타이어 3개 중 1개에만 센서(Journal Pressure 등)를 달아
+    측정하고, 교체 시점이 오면 3개를 한꺼번에 교체한다 - 그래서 API도 타이어
+    3개가 아니라 대표 롤타이어 1개에 대한 결과만 반환한다.
+
+    계산은 항상 이 엔드포인트(FastAPI)에서만 수행한다 - Unity/React는 결과만 표시한다.
+    """
+
+    data = latest_status.get(machine_id)
+
+    if data is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Machine data not found",
+        )
+
+    cumulative_hours = data.get(
+        "cumulativeOperatingHours",
+        BASELINE_CUMULATIVE_HOURS,
+    )
+    journal_pressure_actual = data.get("journalPressureActualPsi")
+
+    k_value = (
+        wear_coefficient_k
+        if wear_coefficient_k is not None
+        else wear_engine.DEFAULT_WEAR_COEFFICIENT_K
+    )
+
+    result = wear_engine.compute_wear(
+        tire_id=MONITORED_TIRE_ID,
+        cumulative_hours=cumulative_hours,
+        journal_pressure_actual_psi=(
+            journal_pressure_actual if load_newtons is None else None
+        ),
+        wear_coefficient_k=k_value,
+        contact_width_scenario=contact_width_scenario,
+        load_newtons_override=load_newtons,
+    )
+
+    return {
+        "machineId": machine_id,
+        "equation": "h = C(t) x K x F  (Archard 법칙 기반)",
+        "equationConstants": {
+            "bowlTrackDiameterM": wear_engine.BOWL_TRACK_DIAMETER_M,
+            "bowlRpm": wear_engine.BOWL_RPM,
+            "overlayHardnessPa": wear_engine.OVERLAY_HARDNESS_PA,
+            "contactLengthM": wear_engine.CONTACT_LENGTH_M,
+            "wearLimitMm": wear_engine.WEAR_LIMIT_MM,
+        },
+        "contactWidthScenarios": wear_engine.CONTACT_WIDTH_SCENARIOS_M,
+        "tire": {
+            "tireId": result.tire_id,
+            "cumulativeHours": round(result.cumulative_hours, 1),
+            "contactWidthScenario": result.contact_width_scenario,
+            "wearCoefficientK": result.wear_coefficient_k,
+            "loadNewtons": round(result.load_newtons, 1),
+            "loadEstimationMethod": result.load_estimation_method,
+            "amplificationC": round(result.amplification_c, 4),
+            "wearMm": result.wear_mm,
+            "wearLimitMm": result.wear_limit_mm,
+            "wearRateMmPerHour": result.wear_rate_mm_per_hour,
+            "remainingUsefulLifeHours": result.remaining_useful_life_hours,
+            "damagePercent": result.damage_percent,
+            "severityMultiplier": result.severity_multiplier,
+            "notes": result.notes,
+            "zoneWearProfileMm": result.zone_wear_profile_mm,
+        },
+    }
+
 
 @app.get("/api/pulverizers/{machine_id}/history/range")
 async def read_history_range(

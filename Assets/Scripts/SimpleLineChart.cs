@@ -222,10 +222,8 @@ public class SimpleLineChart : MaskableGraphic
         );
     }
 
-    protected override void Reset()
+    protected void Reset()
     {
-        base.Reset();
-
         raycastTarget = false;
     }
 }

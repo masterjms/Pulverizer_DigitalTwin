@@ -1,0 +1,2 @@
+# Excel import only. The read-only API uses the Python standard library.
+openpyxl>=3.1,<4
