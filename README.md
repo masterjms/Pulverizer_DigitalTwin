@@ -1,110 +1,94 @@
-# Nextro · Pulverizer Digital Twin
+# 발전소 미분기 디지털 트윈
 
-CE 883HP 미분기의 Unity 모델과 React 화면, 로컬 B 운전 기록 조회 도구를 함께 관리합니다.
+석탄을 가루로 빻는 설비인 미분기의 상태를 3D 모델과 화면으로 보여 주는 웹 프로그램입니다. ㈜넥스트로 디지털트윈팀에서 인턴으로 일하며 만들었습니다. 이 저장소에는 제가 맡았던 화면 설계와 구현, 그리고 화면에 들어가는 데이터를 검증하는 도구가 들어 있습니다.
 
-![분해 단계 PC 화면 — 가상 데이터 예제](Evidence/ce883/field-desktop-1920.png)
+![외형](Evidence/ce883/exterior.png)
 
-## 현재 구현
+실행 방법을 안내하는 문서가 아닙니다. 무엇을 문제라고 보았고 그것을 어떻게 풀었는지를 적은 기록입니다.
 
-- **외형:** 미분기 A~F 전체 상태 확인.
-- **절개:** 선택 설비의 부품·교체 판단 정보.
-- **분해:** 롤 하나 확대, 위치 1~10 마모 표시 계약, 타임바, 잔여수명·이벤트 그래프, 독립 스크롤 상세 패널.
-- 이벤트 선택과 Unity 부품/시간 커서/운전 변수 연동.
-- 로컬 B 운전 기록의 읽기 전용 API 및 원본 Excel→SQLite 검증 도구.
-- 실데이터와 가상 UI 예제를 명확히 구분.
+## 처음 받은 요구와 실제 문제
 
-**현재 실제 B 마모·잔여수명 예측은 연결 전입니다.** 미래 시뮬레이션 영역은 검토용 자리이며 계산 기능은 구현하지 않았습니다. A·C·D·E·F의 실측 운전 데이터는 이 저장소에 포함되어 있지 않습니다. `wear_sim` 기존 연구 코드는 별도 프로젝트 `pulverizer-lab`에 있으며 이번 저장소에 통합하지 않았습니다.
+처음 받은 요구는 설비를 3D로 보여 주고 부품의 남은 수명을 표시해 달라는 것이었습니다.
 
-## 폴더
+화면 구성에는 정답이 없습니다. 팀은 무엇을 넣고 뺄지를 두고 회의를 거듭했지만 판단할 기준이 없어 결론이 나지 않았습니다. 대표에게 물으면 비용과 운영 목표가 중요하다고 했고, 현장 작업자에게 물으면 부품 하나하나의 이상 징후를 보고 싶다고 했습니다. 둘 다 맞는 말이었습니다.
+
+그래서 문제는 배치가 아니었습니다. 이 화면을 누가 보고 어떤 결정을 내리는지가 정해져 있지 않다는 것이 문제였습니다.
+
+## 세 단계로 들어가는 화면
+
+사용자를 셋으로 나눴습니다. 설비 전체의 비용을 보는 의사결정권자, 설비 한 대의 교체 시점을 정하는 운영자, 부품 단위의 원인을 찾는 현장 작업자입니다. 세 사람은 같은 데이터를 서로 다른 크기로 묶어서 볼 뿐이라는 점에 착안해, 화면을 세 개 만드는 대신 하나의 3D 모델을 한 단계씩 들어갈수록 더 세밀한 정보가 나오도록 설계했습니다.
+
+| 단계 | 3D 모델 | 화면이 답하는 질문 |
+|---|---|---|
+| 외형 | 설비 여섯 대의 겉모습 | 지금 어느 설비가 돌고 있는가, 목표와 비용은 어떤가 |
+| 절개 | 고른 설비 한 대의 단면 | 이 설비는 언제 부품을 바꿔야 하는가 |
+| 분해 | 부품을 펼친 모습 | 어떤 일이 이 부품을 이렇게 만들었는가 |
+
+| 절개 | 분해 |
+|---|---|
+| ![절개](Evidence/ce883/cutaway.png) | ![분해](Evidence/ce883/exploded.png) |
+
+역할에 따라 화면을 잠그지는 않았습니다. 누구든 필요하면 끝까지 들어갈 수 있고, 첫 단계에서 멈춰도 판단에 필요한 정보는 다 보입니다. 단계를 오가도 보고 있던 시점은 그대로 유지됩니다.
+
+분해 단계에서는 시간 막대를 움직여 과거의 어느 시점으로 돌아갈 수 있습니다. 그러면 3D 모델의 색, 그때의 운전 값, 그 무렵 있었던 정비 기록이 함께 바뀝니다. 그래프의 점 하나를 누르면 그 시점과 해당 부품으로 이동합니다.
+
+## 숫자를 믿을 수 있게 하는 원칙
+
+이런 화면에서 가장 위험한 것은 그럴듯해 보이는 숫자입니다. 값이 없는데 0으로 보이거나, 다른 설비의 값이 섞여 들어오거나, 시험용 값이 실제 값처럼 보이면 화면 전체를 믿을 수 없게 됩니다. 그래서 화면을 만들기 전에 원칙부터 글로 정했습니다.
+
+- 값이 없으면 없다고 표시합니다. 0이나 정상으로 바꿔 보여 주지 않습니다.
+- 한 설비의 기록을 다른 설비에 복제해 채우지 않습니다.
+- 시험용 가상 데이터는 사용자가 직접 열어야만 나오고, 여는 동안 화면 맨 위에 가상이라는 안내가 계속 보입니다.
+- 과거 기록을 재생하는 것과 미래를 계산하는 것을 화면에서 구분합니다.
+- 같은 시각에 일어난 두 가지 일을 원인과 결과로 단정하지 않습니다.
+- 수명이나 교체 시점은 화면에서 다시 계산하지 않습니다. 계산은 한 곳에서만 하고 화면은 받은 값을 보여 주기만 합니다.
+
+## 원칙을 코드가 지키게 하기
+
+원칙을 문서에만 적어 두면 바쁜 날 무너집니다. 그래서 화면이 받는 데이터가 갖춰야 할 모양을 타입으로 정하고, 들어오는 데이터를 화면에 그리기 전에 검사하는 단계를 두었습니다. 설비 이름이 요청한 것과 다르거나, 부품 수가 맞지 않거나, 숫자가 아닌 값이 섞여 있으면 화면에 그리지 않고 거부합니다.
+
+테스트는 위의 원칙을 한 문장씩 옮겨 적은 것입니다. 테스트 이름만 읽어도 이 화면이 무엇을 약속하는지 알 수 있게 썼습니다.
+
+- 다른 설비의 데이터가 섞여 들어오지 않는다
+- 값이 없는 것과 마모가 0인 것은 다른 색으로 보인다
+- 기준 시각보다 뒤의 기록은 읽지 않는다
+- 오래된 상태를 현재 값처럼 유지하지 않는다
+- 비용이 늘어난 것을 줄어든 것으로 바꾸지 않는다
+
+## 실제 기록을 연결하면서
+
+화면에 실제 운전 기록을 연결하는 일도 맡았습니다. 기록은 엑셀 파일로 받았고, 이것을 화면이 읽을 수 있는 형태로 옮겨야 했습니다.
+
+옮기는 과정에서 값이 하나라도 바뀌면 그 뒤의 모든 화면이 틀리게 됩니다. 그래서 옮기기 전과 후의 모든 값을 순서대로 비교해 완전히 같은지 확인하는 도구를 만들었습니다. 값 하나나 시각 하나만 달라져도 알아챌 수 있습니다. 옮긴 뒤의 저장소는 읽기만 가능하게 열어, 화면 쪽 코드가 실수로 기록을 고칠 수 없게 했습니다.
+
+이 과정에서 기록 자체의 문제도 여럿 찾았습니다. 팀이 실제 기록이라고 믿고 있던 데이터베이스가 받은 파일과 기간부터 다른 별개의 시험 데이터였다는 것, 켜짐과 꺼짐만 있어야 할 상태 값에 중간 값이 섞여 있어 내보내는 과정에서 평균 처리된 것으로 보인다는 것, 같은 항목의 단위가 설명서와 파일에서 서로 다르다는 것입니다. 확인되지 않은 것은 추측으로 메우지 않고 확인이 필요한 항목으로 문서에 남겼습니다.
+
+고객사의 운전 기록과 원본 문서는 이 저장소에 들어 있지 않습니다.
+
+## 3D 모델
+
+모델은 손으로 그리지 않고 코드로 만들었습니다. 부품의 치수를 코드에 적어 두면 모델과 화면 구성, 검증까지 한 번에 다시 만들어집니다. 그래서 형상을 바꿔야 할 때 3D 편집 도구를 열지 않아도 됩니다.
+
+화면과 모델은 부품의 이름으로 연결됩니다. 화면에서 롤의 어느 위치를 누르면 모델의 같은 위치가 선택되고, 모델에서 부품을 누르면 화면이 그 부품의 정보로 바뀝니다. 모델은 받은 값에 따라 색만 칠하고 스스로 계산하지 않습니다.
+
+이 모델은 설비의 구조를 이해하기 위한 시각적 근사이며 제조 도면이 아닙니다.
+
+## 하지 않은 것과 남은 것
+
+- 실제 기록에 근거한 마모와 수명 예측은 연결하지 못했습니다. 화면의 자리는 만들어 두었고, 값이 없는 동안은 산정되지 않았다고 표시합니다.
+- 운전 조건을 바꾸면 수명이 어떻게 달라지는지 보여 주는 미래 시뮬레이션은 화면 제안까지만 했습니다.
+- 여섯 대 가운데 실제 기록을 받은 것은 한 대뿐입니다.
+- 코드를 올릴 때마다 테스트가 자동으로 도는 구성은 아직 없습니다.
+
+## 저장소 구성
 
 | 경로 | 내용 |
 |---|---|
-| `Assets/NextroTwin/` | CE883 모델·프리팹·씬·C# 브리지·생성/검증 도구 |
-| `Packages/`, `ProjectSettings/` | Unity 프로젝트 설정 |
-| `Frontend/` | React + TypeScript + Vite, CE883 UI 및 이전 UI |
-| `Tools/local_b_data.py` | 로컬 Excel 수입·검증 및 읽기 전용 조회 서버(8143) |
-| `Backend/` | 이전 FastAPI/TimescaleDB 프로토타입. CE883 기록 화면의 필수 서버가 아님 |
-| `Docs/` | 설계·데이터 검토·연결 계약·검증 기록 |
-| `Tests/`, `Frontend/tests/` | 데이터 처리·화면 계약 테스트 |
-| `Evidence/ce883/` | 모델 및 화면 검증 이미지 |
+| `Frontend/src/ce883/` | 세 단계 화면, 데이터의 모양을 정한 타입과 검사 코드 |
+| `Frontend/tests/` | 화면이 지켜야 할 원칙을 옮긴 테스트 |
+| `Assets/NextroTwin/` | 3D 모델을 만드는 코드와 화면 연결부 |
+| `Tools/` | 기록을 옮기고 전후를 비교하는 도구, 전달용 묶음을 만드는 도구 |
+| `Tests/` | 기록 도구의 테스트 |
+| `Docs/` | 설계 결정과 검증 기록 |
 
-## 빠르게 화면 실행하기 (Windows PowerShell)
-
-필요: Git, Git LFS, Node.js **24 LTS**, npm. WebGL Release를 사용하면 Unity Editor 없이 화면을 확인할 수 있습니다.
-
-```powershell
-git clone https://github.com/masterjms/Pulverizer_DigitalTwin.git
-cd Pulverizer_DigitalTwin
-git lfs pull
-cd Frontend
-npm ci
-cd ..
-```
-
-### WebGL 빌드 받기
-
-[Releases](https://github.com/masterjms/Pulverizer_DigitalTwin/releases)에서 `CE883-WebGL-2026-10-05.zip`과 `SHA256SUMS.txt`를 받습니다. 저장소가 비공개이므로 로그인한 계정에 접근 권한이 필요합니다. GitHub CLI 사용 시:
-
-```powershell
-gh release download ce883-2026-10-05 --repo masterjms/Pulverizer_DigitalTwin --pattern "CE883-WebGL-2026-10-05.zip" --pattern "SHA256SUMS.txt" --dir .\Builds\downloads
-Get-FileHash .\Builds\downloads\CE883-WebGL-2026-10-05.zip -Algorithm SHA256
-Get-Content .\Builds\downloads\SHA256SUMS.txt
-# 위 SHA256 값이 같은지 확인한 다음 압축 해제
-Expand-Archive .\Builds\downloads\CE883-WebGL-2026-10-05.zip -DestinationPath .\Frontend\public -Force
-powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Start-Ce883Local.ps1
-```
-
-[로컬 화면](http://127.0.0.1:5173/react-twin/?viewer=ce883)을 열고 **가상 그래프 예제**로 UI를 확인합니다. 실제 운전 데이터가 없어도 이 예제는 동작합니다. 일반 `npm run dev`로 실행할 때도 URL에 `?viewer=ce883`를 넣어야 현재 화면이 열립니다.
-
-## 실제 B 데이터
-
-원본 엑셀·HWP·SQLite·DB 덤프·개인 환경변수는 업로드하지 않았습니다. 이미 검증한 캐시를 별도로 보유한 PC에서는 다음 위치로 복사합니다.
-
-```text
-Data/local-b/history.sqlite          # 2025-12-10~19
-Data/march-b-review/history.sqlite   # 2026-03-20~31
-```
-
-기존 작업 PC의 원본 캐시는 `C:\Users\mstot\PulverizerTwin\Data\`에 있습니다. 이 저장소의 `Data/`는 Git에서 제외됩니다. 두 캐시를 배치한 후 시작 스크립트를 실행하면 B API도 실행합니다. 기존 5173/8143 서비스가 실행 중이면 새 프로세스를 중복 실행하지 않습니다.
-
-12월 원본 Excel로 캐시를 새로 만들 때:
-
-```powershell
-python -m pip install -r Tools/requirements.txt
-python Tools/local_b_data.py --import-xlsx "원본 Excel 경로"
-```
-
-위 단일 파일 수입 명령의 대상은 `Data/local-b/`입니다. 3월 자료를 이 명령으로 덮어쓰지 마세요. 3월 검증 캐시를 해당 별도 경로에 배치해야 합니다. 6개월 전체 파일을 자동 병합하는 도구는 아직 없습니다. 코드 20 원인·마모 측정 의미·교체 한계 등 미확정 사항은 데이터 검토 문서에 기록되어 있습니다.
-
-## Unity에서 수정·재빌드
-
-- Unity **6000.5.2f1**, Web Build Support, 활성화된 Editor 라이선스 필요.
-- 이 저장소의 루트 폴더를 Unity Hub에서 엽니다.
-- 씬: `Assets/NextroTwin/Scenes/CE883_Inspection.unity`.
-- 메뉴 `Nextro → CE883 → 2. Verify scene and bridge`로 검증합니다.
-- 메뉴 `Nextro → CE883 → 3. Build inspection WebGL`로 `Builds/CE883`에 빌드합니다.
-- 루트에서 `powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Publish-Ce883Local.ps1`을 실행하면 `Frontend/public/ce883-build`로 복사하고 캐시 버전 파일을 생성합니다.
-- `1. Generate inspection scene`은 씬/생성 자산을 재생성하므로 수동 편집이 있다면 먼저 보관합니다.
-
-## 검증
-
-```powershell
-cd Frontend
-npm run build
-node node_modules/eslint/bin/eslint.js src/ce883
-node --test tests/ce883-contract.test.ts tests/ce883-depth.test.ts tests/ce883-event-life.test.ts
-# 아래 통합 테스트는 실제 B 캐시 2개와 로컬 서버 실행이 필요
-node --test tests/ce883-local-b.integration.test.ts
-cd ..
-python -m unittest discover -s Tests -v
-```
-
-마지막 Python 테스트도 기존 12월 B 캐시가 필요합니다. 현재 빌드에는 기존 번들 크기 권고 경고가 있습니다.
-
-## 배포 파일과 이력
-
-Git에는 편집 가능한 소스와 설정을 저장하고, WebGL은 Release에서 배포합니다. Unity의 Library/Logs/Builds, npm의 node_modules/dist는 재생성합니다. 모델·폰트·화면 이미지에는 기존 Unity Git LFS 규칙을 사용합니다. 원본 작업 폴더의 Git 이력·원격 설정은 변경하지 않고 이 저장소의 기존 이력 위에 통합했습니다.
-
-상세 문서: [PC 배치](Docs/CE883_FIELD_DESKTOP_LAYOUT.md), [이벤트 UI](Docs/CE883_EVENT_LIFE_UI.md), [미래 시뮬레이션 제안](Docs/CE883_FUTURE_SIMULATION_PROPOSAL.md), [Unity 연동](Docs/CE883_DEPTH_INTEGRATION.md).
-
-기존 문서에는 작업 당시의 로컬 경로와 중간 상태가 남아 있습니다. 현재 실행 경로와 구성은 이 README를 우선합니다. 포함된 타사 자산의 라이선스·출처 표기는 해당 파일과 Frontend README에 보존되어 있습니다.
+React · TypeScript · Vite · Unity WebGL · Python · SQLite
